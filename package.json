@@ -1,0 +1,15 @@
+{
+  "name": "realtime-tracker",
+  "version": "1.0.0",
+  "description": "Real-time location tracking system",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "uuid": "^9.0.0",
+    "ws": "^8.14.2"
+  }
+}
