@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>TrackLive — Rastreamento em Tempo Real</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #060910;
+    --surface: #0d1117;
+    --border: #1c2333;
+    --accent: #00e5ff;
+    --accent2: #7c3aed;
+    --text: #e2e8f0;
+    --muted: #4a5568;
+    --success: #10b981;
+    --danger: #ef4444;
+    --mono: 'Space Mono', monospace;
+    --sans: 'Syne', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow-x: hidden;
+  }
+
+  /* Grid bg */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,255,.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .glow-orb {
+    position: fixed;
+    width: 600px; height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(124,58,237,.12) 0%, transparent 70%);
+    top: -200px; right: -200px;
+    pointer-events: none; z-index: 0;
+    animation: orbPulse 6s ease-in-out infinite;
+  }
+  .glow-orb2 {
+    position: fixed;
+    width: 400px; height: 400px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0,229,255,.08) 0%, transparent 70%);
+    bottom: -100px; left: -100px;
+    pointer-events: none; z-index: 0;
+    animation: orbPulse 8s ease-in-out infinite reverse;
+  }
+  @keyframes orbPulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.15);} }
+
+  .container {
+    position: relative; z-index: 1;
+    width: 100%; max-width: 520px;
+    padding: 32px 24px;
+    text-align: center;
+  }
+
+  .logo {
+    display: inline-flex; align-items: center; gap: 10px;
+    margin-bottom: 48px;
+  }
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 0 20px rgba(0,229,255,.4);
+    animation: iconPulse 2s ease-in-out infinite;
+  }
+  @keyframes iconPulse { 0%,100%{box-shadow:0 0 20px rgba(0,229,255,.4);} 50%{box-shadow:0 0 35px rgba(0,229,255,.7);} }
+  .logo-text {
+    font-size: 22px; font-weight: 800; letter-spacing: -0.5px;
+    background: linear-gradient(90deg, var(--accent), #a78bfa);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+
+  h1 {
+    font-size: clamp(28px, 6vw, 40px);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -1px;
+    margin-bottom: 14px;
+  }
+  h1 span { color: var(--accent); }
+
+  .subtitle {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 48px;
+    letter-spacing: 0.02em;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    margin-bottom: 24px;
+  }
+
+  .card-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    margin-bottom: 20px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card-label::before {
+    content: '';
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+  }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+    width: 100%;
+    padding: 16px 24px;
+    border-radius: 10px;
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all .2s;
+    border: none;
+    letter-spacing: 0.01em;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent) 0%, #00b4d8 100%);
+    color: #000;
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,229,255,.35); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-primary:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+  .link-result {
+    display: none;
+    margin-top: 20px;
+  }
+  .link-result.show { display: block; }
+
+  .link-box {
+    display: flex; align-items: center; gap: 8px;
+    background: #0a1220;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+  }
+  .link-box input {
+    flex: 1;
+    background: none; border: none; outline: none;
+    color: var(--accent);
+    font-family: var(--mono);
+    font-size: 12px;
+    min-width: 0;
+  }
+  .copy-btn {
+    background: var(--border);
+    border: none; border-radius: 6px;
+    color: var(--text); cursor: pointer;
+    padding: 6px 10px; font-size: 12px;
+    font-family: var(--mono);
+    transition: all .15s;
+    white-space: nowrap;
+  }
+  .copy-btn:hover { background: var(--accent); color: #000; }
+
+  .expire-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(239,68,68,.1);
+    border: 1px solid rgba(239,68,68,.3);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: #f87171;
+    margin-bottom: 16px;
+  }
+
+  .open-map-btn {
+    margin-top: 8px;
+  }
+
+  .divider {
+    display: flex; align-items: center; gap: 12px;
+    margin: 28px 0;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 11px;
+  }
+  .divider::before, .divider::after {
+    content: ''; flex: 1;
+    height: 1px; background: var(--border);
+  }
+
+  .features {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 12px; margin-top: 32px;
+  }
+  .feature {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .feature-icon { font-size: 20px; }
+  .feature-title { font-size: 13px; font-weight: 700; }
+  .feature-desc { font-size: 11px; font-family: var(--mono); color: var(--muted); line-height: 1.5; }
+
+  .spinner {
+    display: inline-block;
+    width: 16px; height: 16px;
+    border: 2px solid rgba(0,0,0,.3);
+    border-top-color: #000;
+    border-radius: 50%;
+    animation: spin .6s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: var(--success);
+    color: #000;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 700;
+    opacity: 0;
+    transition: opacity .3s;
+    z-index: 999;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+
+  @media (max-width: 480px) {
+    .features { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="glow-orb"></div>
+<div class="glow-orb2"></div>
+
+<div class="container">
+  <div class="logo">
+    <div class="logo-icon">📡</div>
+    <div class="logo-text">TrackLive</div>
+  </div>
+
+  <h1>Rastreamento<br/><span>em Tempo Real</span></h1>
+  <p class="subtitle">// gps · websocket · alta precisão</p>
+
+  <div class="card">
+    <div class="card-label">Gerar link de rastreamento</div>
+    <button class="btn btn-primary" id="generateBtn" onclick="generateSession()">
+      <span>🔗</span> Gerar Link Único
+    </button>
+
+    <div class="link-result" id="linkResult">
+      <div class="expire-badge">
+        ⏱ Link expira em <span id="expireTimer">60:00</span>
+      </div>
+
+      <div class="link-box">
+        <input type="text" id="trackingLink" readonly/>
+        <button class="copy-btn" onclick="copyLink()">copiar</button>
+      </div>
+
+      <button class="btn btn-secondary open-map-btn" id="openMapBtn">
+        🗺️ Abrir meu mapa de visualização
+      </button>
+    </div>
+  </div>
+
+  <div class="divider">ou</div>
+
+  <div class="card">
+    <div class="card-label">Você recebeu um link?</div>
+    <p style="font-size:13px;color:var(--muted);font-family:var(--mono);margin-bottom:16px;">
+      Abra o link recebido para começar a compartilhar sua localização.
+    </p>
+    <div style="display:flex;gap:8px;">
+      <input type="text" id="manualLink" placeholder="Cole o link aqui..."
+        style="flex:1;background:#0a1220;border:1px solid var(--border);border-radius:8px;
+               padding:12px 14px;color:var(--text);font-family:var(--mono);font-size:13px;outline:none;"/>
+      <button class="btn btn-secondary" style="width:auto;padding:12px 20px;" onclick="openManual()">Ir</button>
+    </div>
+  </div>
+
+  <div class="features">
+    <div class="feature">
+      <div class="feature-icon">🎯</div>
+      <div class="feature-title">Alta Precisão</div>
+      <div class="feature-desc">GPS nativo ±5m, atualização contínua</div>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">🗺️</div>
+      <div class="feature-title">Trilha Completa</div>
+      <div class="feature-desc">Histórico de rota em tempo real</div>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">🔋</div>
+      <div class="feature-title">Bateria</div>
+      <div class="feature-desc">Monitora nível e status de carga</div>
+    </div>
+    <div class="feature">
+      <div class="feature-icon">🔒</div>
+      <div class="feature-title">Privado</div>
+      <div class="feature-desc">Link expira em 1h, sem banco de dados</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">✓ Link copiado!</div>
+
+<script>
+let sessionId = null;
+let expiresAt = null;
+let timerInterval = null;
+
+async function generateSession() {
+  const btn = document.getElementById('generateBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Gerando...';
+
+  try {
+    const res = await fetch('/api/session', { method: 'POST' });
+    const data = await res.json();
+    sessionId = data.sessionId;
+    expiresAt = Date.now() + data.expiresIn;
+
+    const baseUrl = window.location.origin;
+    const trackUrl = `${baseUrl}/track.html?s=${sessionId}`;
+    const viewUrl = `${baseUrl}/view.html?s=${sessionId}`;
+
+    document.getElementById('trackingLink').value = trackUrl;
+    document.getElementById('openMapBtn').onclick = () => window.open(viewUrl, '_blank');
+    document.getElementById('linkResult').classList.add('show');
+
+    startTimer();
+  } catch (e) {
+    alert('Erro ao gerar sessão. Tente novamente.');
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '<span>🔄</span> Gerar Novo Link';
+}
+
+function startTimer() {
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    const remaining = Math.max(0, expiresAt - Date.now());
+    const m = Math.floor(remaining / 60000);
+    const s = Math.floor((remaining % 60000) / 1000);
+    document.getElementById('expireTimer').textContent =
+      `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    if (remaining <= 0) clearInterval(timerInterval);
+  }, 1000);
+}
+
+function copyLink() {
+  navigator.clipboard.writeText(document.getElementById('trackingLink').value);
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+function openManual() {
+  const val = document.getElementById('manualLink').value.trim();
+  if (val) window.location.href = val;
+}
+</script>
+</body>
+</html>
